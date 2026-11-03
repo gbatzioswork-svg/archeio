@@ -309,11 +309,18 @@
     syncRail(); (mq.addEventListener?mq.addEventListener('change',syncRail):mq.addListener(syncRail));
     $('loginForm').addEventListener('submit',async function(ev){
       ev.preventDefault();
-      var email=$('loginEmail').value.trim(); if(!email)return;
-      $('loginBtn').disabled=true; $('loginMsg').textContent='Στέλνω τον σύνδεσμο…';
-      var r=await sb.auth.signInWithOtp({email:email,options:{emailRedirectTo:location.origin+location.pathname}});
+      var email=$('loginEmail').value.trim(), pw=$('loginPw').value; if(!email||!pw)return;
+      $('loginBtn').disabled=true; $('loginMsg').textContent='Σύνδεση…';
+      var r=await sb.auth.signInWithPassword({email:email,password:pw});
+      if(r.error){
+        /* πρώτη φορά: δημιουργία λογαριασμού με το ίδιο email και κωδικό */
+        var s=await sb.auth.signUp({email:email,password:pw});
+        if(s.error){r={error:s.error};}
+        else if(!s.data.session){r={error:{message:'Λάθος κωδικός, ή ο λογαριασμός περιμένει επιβεβαίωση email.'}};}
+        else r={};
+      }
       $('loginBtn').disabled=false;
-      $('loginMsg').textContent=r.error?'Δεν στάλθηκε: '+r.error.message:'Έστειλα σύνδεσμο στο '+email+'. Άνοιξέ τον από αυτή τη συσκευή. Αν δεν φαίνεται σε λίγα λεπτά, κοίτα και στα ανεπιθύμητα.';
+      $('loginMsg').textContent=r.error?'Δεν έγινε είσοδος: '+r.error.message:'';
     });
   }
 
