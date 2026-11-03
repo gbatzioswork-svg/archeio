@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Αρχείο Συζητήσεων</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;500&family=Fira+Sans:wght@400;500;600&family=GFS+Didot&display=swap">
+<style>
+[hidden]{display:none!important}
+:root{
+  --bg:#eceef1; --surface:#f7f8fa; --fg:#1b2028; --muted:#576170; --line:#d2d7de;
+  --accent:#2c3fb0; --accent-fg:#ffffff; --warn:#8a5a00;
+  --gel-idea:#94590a; --gel-scenario:#2456c4; --gel-theme:#a3286f; --gel-decision:#1d6a40;
+  --gel-question:#b23718; --gel-task:#136a6c; --gel-reference:#6c5fa8; --gel-summary:#1b2028; --gel-ai:#5a7d00;
+  --font-display:"GFS Didot","Didot","Bodoni 72",Georgia,serif;
+  --font-body:"Fira Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-mono:"Fira Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12151a; --surface:#1a1e25; --fg:#e6e9ee; --muted:#9aa4b3; --line:#2c323c;
+    --accent:#93a1ff; --accent-fg:#10131a; --warn:#e2b24a;
+    --gel-idea:#e2a440; --gel-scenario:#7aa2ff; --gel-theme:#e377b4; --gel-decision:#5cc08a;
+    --gel-question:#ff8a66; --gel-task:#4cc4c6; --gel-reference:#b0a4ec; --gel-summary:#e6e9ee; --gel-ai:#b5d94a;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12151a; --surface:#1a1e25; --fg:#e6e9ee; --muted:#9aa4b3; --line:#2c323c;
+  --accent:#93a1ff; --accent-fg:#10131a; --warn:#e2b24a;
+  --gel-idea:#e2a440; --gel-scenario:#7aa2ff; --gel-theme:#e377b4; --gel-decision:#5cc08a;
+  --gel-question:#ff8a66; --gel-task:#4cc4c6; --gel-reference:#b0a4ec; --gel-summary:#e6e9ee; --gel-ai:#b5d94a;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--fg); font:15px/1.55 var(--font-body);
+  padding-block:28px 72px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1160px;margin-inline:auto}
+.eyebrow{margin:0 0 10px;font:500 12px/1.3 var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{margin:0;font:400 clamp(36px,7vw,60px)/1.04 var(--font-display);letter-spacing:-.01em;text-wrap:balance}
+.lede{margin:12px 0 0;color:var(--muted);max-width:60ch}
+.gelbar{display:flex;gap:2px;height:6px;margin-top:22px}
+.gelbar span{background:var(--gel);min-width:3px;transition:flex-grow .3s}
+.layout{display:grid;grid-template-columns:250px minmax(0,1fr);gap:clamp(24px,4vw,56px);margin-top:32px;align-items:start}
+.rail{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto;padding-right:6px}
+.rail summary{display:none}
+.group{margin:0 0 22px}
+.group h2{margin:0 0 6px;font:500 11px/1.3 var(--font-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.opts{display:flex;flex-direction:column;gap:1px}
+.opt{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:6px 8px;border:0;border-radius:4px;background:none;text-align:left}
+.opt:hover{background:var(--surface)}
+.opt[aria-pressed="true"]{background:var(--surface);font-weight:600;box-shadow:inset 0 0 0 1px var(--accent)}
+.opt .n{font:400 12px/1 var(--font-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.opt.zero{opacity:.45}
+.opt .lab{display:inline-flex;align-items:center;gap:8px;min-width:0}
+.sw{width:9px;height:9px;background:var(--gel);flex:none}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:3px 9px;border:1px solid var(--line);border-radius:99px;background:none;font:400 12.5px/1.4 var(--font-body)}
+.chip:hover{border-color:var(--accent)}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.textbtn{border:0;background:none;padding:0;color:var(--accent);font-size:13px;text-decoration:underline;text-underline-offset:3px}
+.textbtn.muted{color:var(--muted)}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.search{flex:1 1 260px;min-width:0;position:relative}
+.search input{width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+.btn{padding:10px 16px;border:1px solid var(--accent);border-radius:6px;background:var(--accent);color:var(--accent-fg);font-weight:500}
+.btn.ghost{background:none;color:var(--fg);border-color:var(--line)}
+.btn[disabled]{opacity:.5;cursor:default}
+.statusline{margin:14px 0 0;min-height:1.5em;font:400 12.5px/1.5 var(--font-mono);color:var(--muted)}
+.statusline.warn{color:var(--warn)}
+.composer{margin-top:16px;padding:18px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.composer h2{margin:0 0 12px;font:600 16px/1.3 var(--font-body)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field.wide{grid-column:1/-1}
+.field label{font:500 11px/1.3 var(--font-mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.field input,.field select,.field textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:5px;background:var(--bg)}
+.field textarea{min-height:120px;resize:vertical}
+.field.check{flex-direction:row;align-items:center;gap:8px}
+.field.check label{text-transform:none;letter-spacing:0;font:400 14px/1.3 var(--font-body);color:var(--fg)}
+.field.check input{width:auto}
+.formrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.ledger{list-style:none;margin:18px 0 0;padding:0;border-top:1px solid var(--line)}
+.entry{padding:20px 0;border-bottom:1px solid var(--line);display:grid;gap:8px;min-width:0}
+.meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font:500 11.5px/1.2 var(--font-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kind{display:inline-flex;align-items:center;gap:7px;color:var(--gel)}
+.kind i{width:9px;height:9px;background:var(--gel);display:inline-block}
+.st{padding:2px 7px;border:1px solid var(--line);border-radius:3px}
+.st.leaning{border-color:var(--accent);color:var(--accent)}
+.st.decided,.st.done{border-color:var(--gel-decision);color:var(--gel-decision)}
+.st.parked{border-style:dashed}
+.chk{padding:2px 7px;border:1px solid var(--warn);border-radius:3px;color:var(--warn)}
+.entry h3{margin:0;font:600 17px/1.35 var(--font-body);text-wrap:balance;max-width:62ch}
+.body{margin:0;max-width:68ch;white-space:pre-line;overflow-wrap:anywhere}
+.body.clamp{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.foot{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:2px;font-size:13px;color:var(--muted)}
+.tags{display:flex;flex-wrap:wrap;gap:2px 10px}
+.tag{border:0;background:none;padding:0;font:400 12.5px/1.5 var(--font-mono);color:var(--muted)}
+.tag:hover{color:var(--accent);text-decoration:underline}
+.tag.on{color:var(--accent);font-weight:500}
+.foot .sp{flex:1}
+.mini{border:1px solid var(--line);border-radius:4px;padding:3px 6px;background:var(--bg);font-size:12.5px}
+.confirm{display:inline-flex;gap:10px;align-items:center;color:var(--fg)}
+.dangerbtn{border:0;background:none;padding:0;color:var(--gel-question);font-size:13px;text-decoration:underline;text-underline-offset:3px}
+.note{padding:40px 0;color:var(--muted);max-width:56ch}
+.note strong{color:var(--fg);font-weight:600}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));max-width:min(92vw,520px);padding:11px 16px;border-radius:6px;background:var(--fg);color:var(--bg);font-size:14px;z-index:20}
+.thread{margin:4px 0 0;padding:12px 0 0 14px;border-left:2px solid var(--line);display:grid;gap:14px;max-width:68ch;min-width:0}
+.cm{display:grid;gap:3px;min-width:0}
+.cm .who{display:flex;flex-wrap:wrap;gap:4px 10px;font:500 12px/1.3 var(--font-mono);color:var(--muted)}
+.cm .who b{color:var(--fg);font-weight:600}
+.cm p{margin:0;white-space:pre-line;overflow-wrap:anywhere}
+.cm .mentions{display:flex;flex-wrap:wrap;gap:6px}
+.mention{display:inline-flex;align-items:center;padding:0 6px;border-radius:3px;background:var(--surface);border:1px solid var(--line);font-size:12.5px;line-height:1.6;color:var(--accent)}
+.mention.me{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.cform{display:grid;gap:8px}
+.cform textarea{min-height:64px;resize:vertical;width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:5px;background:var(--bg)}
+.tagrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tagpick{position:relative}
+.tagpick input{padding:5px 9px;border:1px solid var(--line);border-radius:5px;background:var(--bg);width:200px;max-width:100%}
+.menu{position:absolute;z-index:5;top:100%;left:0;min-width:230px;margin-top:2px;padding:4px;border:1px solid var(--line);border-radius:6px;background:var(--surface);box-shadow:0 6px 18px rgba(0,0,0,.2);display:grid;gap:1px}
+.menu button{display:flex;align-items:center;gap:8px;padding:6px 8px;border:0;background:none;border-radius:4px;text-align:left}
+.menu button:hover{background:var(--bg)}
+.menu .none{padding:6px 8px;color:var(--muted);font-size:13px}
+.rm{border:0;background:none;padding:0 0 0 5px;color:inherit;opacity:.75;line-height:1}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (max-width:860px){
+  .layout{grid-template-columns:minmax(0,1fr);gap:18px}
+  .rail{position:static;max-height:none;overflow:visible;padding:0}
+  .rail summary{display:block;list-style:none;padding:10px 14px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-weight:500;cursor:pointer}
+  .rail summary::-webkit-details-marker{display:none}
+  .rail[open] summary{margin-bottom:16px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+.topbar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:flex-end;margin-bottom:18px;font-size:13.5px;color:var(--muted)}
+.topbar input{padding:5px 9px;border:1px solid var(--line);border-radius:5px;background:var(--surface);width:170px;max-width:100%}
+.auth{max-width:460px;margin:12vh auto 0;display:grid;gap:14px}
+.auth h1{font-size:clamp(34px,8vw,52px)}
+.auth form{display:grid;gap:10px}
+.auth input[type=email]{padding:11px 14px;border:1px solid var(--line);border-radius:6px;background:var(--surface);width:100%}
+.auth p{margin:0;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap" lang="el">
+  <section class="auth" id="authView" hidden>
+    <p class="eyebrow">Θέατρο · κλειστή ομάδα</p>
+    <h1>Αρχείο Συζητήσεων</h1>
+    <form id="loginForm">
+      <p>Γράψε το email σου και θα σου στείλουμε σύνδεσμο εισόδου. Δεν υπάρχει κωδικός.</p>
+      <label class="sr" for="loginEmail">Email</label>
+      <input id="loginEmail" type="email" required autocomplete="email" placeholder="to.email@sou.gr">
+      <button class="btn" id="loginBtn" type="submit">Στείλε μου σύνδεσμο</button>
+      <p id="loginMsg" role="status"></p>
+    </form>
+  </section>
+
+  <section class="auth" id="noAccessView" hidden>
+    <p class="eyebrow">Δεν υπάρχει πρόσβαση</p>
+    <h1>Αρχείο Συζητήσεων</h1>
+    <p id="noAccessMsg"></p>
+    <div><button class="btn ghost" id="noAccessOut" type="button">Αποσύνδεση</button></div>
+  </section>
+
+  <section class="auth" id="configView" hidden>
+    <p class="eyebrow">Ρύθμιση</p>
+    <h1>Αρχείο Συζητήσεων</h1>
+    <p>Λείπουν οι ρυθμίσεις του Supabase. Άνοιξε το αρχείο config.js και βάλε το URL και το κλειδί του project σου.</p>
+  </section>
+
+  <div id="appView" hidden>
+    <div class="topbar">
+      <span id="whoami"></span>
+      <button class="textbtn" id="renameBtn" type="button">Αλλαγή ονόματος</button>
+      <span id="renameBox" hidden><label class="sr" for="renameInput">Το όνομά σου</label><input id="renameInput" type="text" maxlength="60"> <button class="textbtn" id="renameSave" type="button">Αποθήκευση</button></span>
+      <button class="textbtn" id="signOutBtn" type="button">Αποσύνδεση</button>
+    </div>
+    <header>
+      <p class="eyebrow">Θέατρο · Γιώργος · Ιωσήφ · Μαργαρίτα</p>
+      <h1>Αρχείο Συζητήσεων</h1>
+      <p class="lede" id="lede">Ιδέες, σενάρια, αποφάσεις και ανοιχτά ερωτήματα από τις συναντήσεις της ομάδας, με αναζήτηση και φίλτρα.</p>
+      <div class="gelbar" id="gelbar" aria-hidden="true"></div>
+    </header>
+    <div class="layout">
+      <details class="rail" id="rail" open>
+        <summary id="railSummary">Φίλτρα</summary>
+        <div id="railBody"></div>
+      </details>
+      <main>
+        <div class="toolbar">
+          <div class="search">
+            <label class="sr" for="q">Αναζήτηση</label>
+            <input id="q" type="search" placeholder="Αναζήτηση σε τίτλους, κείμενα, σχόλια και ετικέτες" autocomplete="off">
+          </div>
+          <button class="btn" id="newBtn" type="button">Νέα καταχώρηση</button>
+        </div>
+        <section class="composer" id="composer" hidden aria-labelledby="formTitle">
+          <h2 id="formTitle">Νέα καταχώρηση</h2>
+          <form id="form" novalidate>
+            <div class="grid">
+              <div class="field"><label for="f-type">Είδος</label><select id="f-type"></select></div>
+              <div class="field"><label for="f-area">Τομέας</label><select id="f-area"></select></div>
+              <div class="field"><label for="f-status">Κατάσταση</label><select id="f-status"></select></div>
+              <div class="field"><label for="f-session">Ημερομηνία συνάντησης</label><input id="f-session" type="date"></div>
+              <div class="field wide"><label for="f-title">Τίτλος</label><input id="f-title" type="text" maxlength="200" placeholder="Μια φράση που να βρίσκεται εύκολα"></div>
+              <div class="field wide"><label for="f-body">Κείμενο</label><textarea id="f-body" maxlength="6000" placeholder="Τι ειπώθηκε, τι αποφασίστηκε, τι μένει ανοιχτό"></textarea></div>
+              <div class="field wide"><label for="f-tags">Ετικέτες (χωρισμένες με κόμμα)</label><input id="f-tags" type="text" placeholder="π.χ. Μαλότ, τέλος, μουσική"></div>
+              <div class="field wide"><label>Tag μελών της ομάδας</label><div id="f-people"></div></div>
+              <div class="field"><label for="f-by">Καταχωρήθηκε από</label><input id="f-by" type="text" maxlength="60"></div>
+              <div class="field check"><input id="f-check" type="checkbox"><label for="f-check">Χρειάζεται επιβεβαίωση</label></div>
+            </div>
+            <div class="formrow">
+              <button class="btn" id="saveBtn" type="submit">Αποθήκευση</button>
+              <button class="btn ghost" id="cancelBtn" type="button">Ακύρωση</button>
+            </div>
+          </form>
+        </section>
+        <p class="statusline" id="statusline" role="status"></p>
+        <ul class="ledger" id="list"><li class="note">Φόρτωση καταχωρήσεων…</li></ul>
+      </main>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
