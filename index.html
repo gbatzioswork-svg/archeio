@@ -146,7 +146,7 @@ h1{margin:0;font:400 clamp(36px,7vw,60px)/1.04 var(--font-display);letter-spacin
 .auth{max-width:460px;margin:12vh auto 0;display:grid;gap:14px}
 .auth h1{font-size:clamp(34px,8vw,52px)}
 .auth form{display:grid;gap:10px}
-.auth input[type=email]{padding:11px 14px;border:1px solid var(--line);border-radius:6px;background:var(--surface);width:100%}
+.auth input[type=email],.auth input[type=password]{padding:11px 14px;border:1px solid var(--line);border-radius:6px;background:var(--surface);width:100%}
 .auth p{margin:0;color:var(--muted)}
 </style>
 </head>
@@ -156,10 +156,12 @@ h1{margin:0;font:400 clamp(36px,7vw,60px)/1.04 var(--font-display);letter-spacin
     <p class="eyebrow">Θέατρο · κλειστή ομάδα</p>
     <h1>Αρχείο Συζητήσεων</h1>
     <form id="loginForm">
-      <p>Γράψε το email σου και θα σου στείλουμε σύνδεσμο εισόδου. Δεν υπάρχει κωδικός.</p>
+      <p>Γράψε το email σου και τον κωδικό της ομάδας.</p>
       <label class="sr" for="loginEmail">Email</label>
       <input id="loginEmail" type="email" required autocomplete="email" placeholder="to.email@sou.gr">
-      <button class="btn" id="loginBtn" type="submit">Στείλε μου σύνδεσμο</button>
+      <label class="sr" for="loginPw">Κωδικός</label>
+      <input id="loginPw" type="password" required autocomplete="current-password" placeholder="Κωδικός">
+      <button class="btn" id="loginBtn" type="submit">Είσοδος</button>
       <p id="loginMsg" role="status"></p>
     </form>
   </section>
