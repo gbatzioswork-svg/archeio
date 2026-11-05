@@ -148,6 +148,23 @@ h1{margin:0;font:400 clamp(36px,7vw,60px)/1.04 var(--font-display);letter-spacin
 .auth form{display:grid;gap:10px}
 .auth input[type=email],.auth input[type=password]{padding:11px 14px;border:1px solid var(--line);border-radius:6px;background:var(--surface);width:100%}
 .auth p{margin:0;color:var(--muted)}
+
+/* photos */
+:root{--gel-photo:#9a4a1c}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--gel-photo:#e8a070}}
+:root[data-theme="dark"]{--gel-photo:#e8a070}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;max-width:62ch}
+.gallery .ph{display:block;aspect-ratio:1/1;padding:0;border:1px solid var(--line);border-radius:6px;background:var(--surface);overflow:hidden;cursor:zoom-in}
+.gallery .ph img{display:block;width:100%;height:100%;object-fit:cover}
+.previews{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.pv{position:relative;width:84px;height:84px;border:1px solid var(--line);border-radius:6px;background:var(--surface);overflow:hidden}
+.pv img{display:block;width:100%;height:100%;object-fit:cover}
+.pv .rm{position:absolute;top:3px;right:3px;width:22px;height:22px;padding:0;border-radius:50%;background:var(--fg);color:var(--bg);opacity:.9;font-size:15px;line-height:22px;text-align:center}
+.lightbox{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;background:rgba(10,12,16,.92)}
+.lightbox img{max-width:100%;max-height:calc(100vh - 90px);object-fit:contain;border-radius:4px}
+.lbbar{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;gap:12px;padding:12px 16px;color:#e6e9ee}
+.lbbar .cnt{margin-right:auto;font:400 13px var(--font-mono)}
+.lbbtn{min-width:44px;height:44px;border:1px solid #4a5160;border-radius:8px;background:#1b2028;color:#e6e9ee;font-size:24px;line-height:1}
 </style>
 </head>
 <body>
@@ -216,6 +233,7 @@ h1{margin:0;font:400 clamp(36px,7vw,60px)/1.04 var(--font-display);letter-spacin
               <div class="field wide"><label for="f-title">Τίτλος</label><input id="f-title" type="text" maxlength="200" placeholder="Μια φράση που να βρίσκεται εύκολα"></div>
               <div class="field wide"><label for="f-body">Κείμενο</label><textarea id="f-body" maxlength="6000" placeholder="Τι ειπώθηκε, τι αποφασίστηκε, τι μένει ανοιχτό"></textarea></div>
               <div class="field wide"><label for="f-tags">Ετικέτες (χωρισμένες με κόμμα)</label><input id="f-tags" type="text" placeholder="π.χ. Μαλότ, τέλος, μουσική"></div>
+              <div class="field wide"><label for="f-files">Φωτογραφίες (έως 12)</label><input id="f-files" type="file" accept="image/*" multiple><div id="f-previews" class="previews"></div></div>
               <div class="field wide"><label>Tag μελών της ομάδας</label><div id="f-people"></div></div>
               <div class="field"><label for="f-by">Καταχωρήθηκε από</label><input id="f-by" type="text" maxlength="60"></div>
               <div class="field check"><input id="f-check" type="checkbox"><label for="f-check">Χρειάζεται επιβεβαίωση</label></div>
