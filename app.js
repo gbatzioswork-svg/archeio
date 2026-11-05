@@ -1,13 +1,13 @@
 (function(){
   'use strict';
-  var TYPES=[{k:'summary',l:'Σύνοψη'},{k:'decision',l:'Απόφαση'},{k:'question',l:'Ερώτημα'},{k:'scenario',l:'Σενάριο'},{k:'idea',l:'Ιδέα'},{k:'theme',l:'Θέμα'},{k:'task',l:'Ενέργεια'},{k:'reference',l:'Αναφορά'},{k:'ai',l:"AI's opinion"}];
+  var TYPES=[{k:'summary',l:'Σύνοψη'},{k:'decision',l:'Απόφαση'},{k:'question',l:'Ερώτημα'},{k:'scenario',l:'Σενάριο'},{k:'idea',l:'Ιδέα'},{k:'theme',l:'Θέμα'},{k:'task',l:'Ενέργεια'},{k:'reference',l:'Αναφορά'},{k:'photo',l:'Φωτογραφίες'},{k:'ai',l:"AI's opinion"}];
   var AREAS=[{k:'plot',l:'Πλοκή & χαρακτήρες'},{k:'form',l:'Μορφή & σκηνοθεσία'},{k:'sound',l:'Μουσική & ήχος'},{k:'meaning',l:'Νόημα & θέματα'},{k:'production',l:'Παραγωγή & πρόγραμμα'},{k:'team',l:'Ομάδα'}];
   var STATUSES=[{k:'open',l:'Ανοιχτό'},{k:'leaning',l:'Κλίση'},{k:'decided',l:'Αποφασίστηκε'},{k:'parked',l:'Παρκαρισμένο'},{k:'done',l:'Ολοκληρώθηκε'}];
   var TYPE_L={},AREA_L={},STATUS_L={},TYPE_RANK={};
   TYPES.forEach(function(t,i){TYPE_L[t.k]=t.l;TYPE_RANK[t.k]=i;});
   AREAS.forEach(function(a){AREA_L[a.k]=a.l;});
   STATUSES.forEach(function(s){STATUS_L[s.k]=s.l;});
-  function hasStatus(type){return type!=='reference'&&type!=='summary';}
+  function hasStatus(type){return type!=='reference'&&type!=='summary'&&type!=='photo';}
   function statusesFor(type){return type==='task'?['open','done','parked']:['open','leaning','decided','parked'];}
 
   var $=function(id){return document.getElementById(id);};
@@ -38,7 +38,7 @@
   /* ---------- data ---------- */
   function prep(r){
     var e={id:r.id,type:r.type||'idea',area:r.area||'meaning',status:r.status||'',title:r.title||'',body:r.body||'',
-      tags:r.tags||[],mentions:r.mentions||[],authorId:r.author_id||'',session:r.meeting_date||'',check:!!r.needs_check,by:r.by_name||'',ord:Number(r.ord)||0};
+      tags:r.tags||[],mentions:r.mentions||[],images:r.images||[],authorId:r.author_id||'',session:r.meeting_date||'',check:!!r.needs_check,by:r.by_name||'',ord:Number(r.ord)||0};
     e.hay=norm([e.title,e.body,e.tags.join(' '),TYPE_L[e.type],AREA_L[e.area],STATUS_L[e.status]].join(' '));
     return e;
   }
@@ -50,10 +50,78 @@
     comments=rs[1].data.map(function(c){return {id:c.id,entryId:c.entry_id,text:c.body,mentions:c.mentions||[],authorId:c.author_id,createdAt:c.created_at};});
     profiles={}; rs[2].data.forEach(function(p){profiles[p.id]=p;});
     cText={}; comments.forEach(function(c){cText[c.entryId]=(cText[c.entryId]||'')+' '+norm(c.text);});
-    loaded=true; render();
+    loaded=true; render(); signThumbs();
   }
   var reloadT;
   function scheduleReload(){clearTimeout(reloadT);reloadT=setTimeout(loadAll,300);}
+
+  /* ---------- photos ---------- */
+  var BUCKET='photos', urlC={}, pending=[], kept=[], gone=[], upl=[], lb=null, lbList=[], lbI=0;
+  function thumbPath(p){return p.replace(/\.jpg$/,'_t.jpg');}
+  async function signPaths(paths){
+    var need=paths.filter(function(p){var c=urlC[p];return !c||c.exp<Date.now()+60000;});
+    if(!need.length)return;
+    var r=await sb.storage.from(BUCKET).createSignedUrls(need,3600);
+    if(r.error||!r.data)return;
+    r.data.forEach(function(d){if(d.signedUrl&&d.path)urlC[d.path]={url:d.signedUrl,exp:Date.now()+3500000};});
+  }
+  async function signThumbs(){
+    var ps=[]; entries.forEach(function(e){e.images.forEach(function(p){ps.push(thumbPath(p));});});
+    if(!ps.length)return;
+    await signPaths(ps); renderList();
+  }
+  function viaImg(file){return new Promise(function(res,rej){var u=URL.createObjectURL(file),i=new Image();i.onload=function(){URL.revokeObjectURL(u);res(i);};i.onerror=function(){URL.revokeObjectURL(u);rej(new Error('Δεν διαβάζεται η εικόνα '+file.name));};i.src=u;});}
+  function loadBitmap(file){
+    if(window.createImageBitmap)return createImageBitmap(file,{imageOrientation:'from-image'}).catch(function(){return viaImg(file);});
+    return viaImg(file);
+  }
+  function scaled(img,max,q){
+    var w=img.width||img.naturalWidth,hh=img.height||img.naturalHeight,k=Math.min(1,max/Math.max(w,hh));
+    var c=document.createElement('canvas'); c.width=Math.max(1,Math.round(w*k)); c.height=Math.max(1,Math.round(hh*k));
+    var x=c.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,c.width,c.height); x.drawImage(img,0,0,c.width,c.height);
+    return new Promise(function(res,rej){c.toBlob(function(b){b?res(b):rej(new Error('Αποτυχία μετατροπής της εικόνας'));},'image/jpeg',q);});
+  }
+  async function uploadPhotos(entryId){
+    var out=[];
+    for(var i=0;i<pending.length;i++){
+      var img=await loadBitmap(pending[i]);
+      var big=await scaled(img,1600,0.82), small=await scaled(img,480,0.78);
+      var base=myId+'/'+entryId+'/'+Date.now().toString(36)+i;
+      var a=await sb.storage.from(BUCKET).upload(base+'.jpg',big,{contentType:'image/jpeg'});
+      if(a.error)throw a.error; upl.push(base+'.jpg');
+      var b=await sb.storage.from(BUCKET).upload(base+'_t.jpg',small,{contentType:'image/jpeg'});
+      if(b.error)throw b.error; upl.push(base+'_t.jpg');
+      out.push(base+'.jpg');
+    }
+    return out;
+  }
+  function pv(src,onrm){
+    return h('div',{class:'pv'},src?h('img',{src:src,alt:''}):h('span',{class:'ph'}),h('button',{type:'button',class:'rm','aria-label':'Αφαίρεση φωτογραφίας',text:'×',onclick:onrm}));
+  }
+  function drawPreviews(){
+    var box=$('f-previews'); box.textContent='';
+    kept.forEach(function(p,i){var c=urlC[thumbPath(p)];box.append(pv(c&&c.url,function(){gone.push(kept.splice(i,1)[0]);drawPreviews();}));});
+    pending.forEach(function(f,i){box.append(pv(URL.createObjectURL(f),function(){pending.splice(i,1);drawPreviews();}));});
+  }
+  function closeLB(){if(lb){lb.remove();lb=null;document.removeEventListener('keydown',lbKey);}}
+  function lbKey(ev){if(ev.key==='Escape')closeLB();else if(ev.key==='ArrowRight')lbGo(1);else if(ev.key==='ArrowLeft')lbGo(-1);}
+  async function showLB(){
+    var p=lbList[lbI]; await signPaths([p]); if(!lb)return;
+    var c=urlC[p]; lb.querySelector('img').src=c?c.url:''; lb.querySelector('.cnt').textContent=(lbI+1)+' / '+lbList.length;
+  }
+  function lbGo(d){if(!lb||lbList.length<2)return;lbI=(lbI+d+lbList.length)%lbList.length;showLB();}
+  function openLB(id,i){
+    var e=entries.filter(function(x){return x.id===id;})[0]; if(!e||!e.images.length)return;
+    closeLB(); lbList=e.images; lbI=Math.min(i||0,lbList.length-1);
+    var multi=lbList.length>1;
+    lb=h('div',{class:'lightbox',role:'dialog','aria-label':'Φωτογραφία',onclick:function(ev){if(ev.target===lb||ev.target.dataset.x)closeLB();}},
+      h('img',{alt:e.title}),
+      h('div',{class:'lbbar'},h('span',{class:'cnt'}),
+        multi?h('button',{type:'button',class:'lbbtn','aria-label':'Προηγούμενη',text:'‹',onclick:function(){lbGo(-1);}}):null,
+        multi?h('button',{type:'button',class:'lbbtn','aria-label':'Επόμενη',text:'›',onclick:function(){lbGo(1);}}):null,
+        h('button',{type:'button',class:'lbbtn','aria-label':'Κλείσιμο',text:'×','data-x':'1'})));
+    document.body.append(lb); document.addEventListener('keydown',lbKey); showLB();
+  }
 
   /* ---------- filtering ---------- */
   function commentsFor(id){return comments.filter(function(c){return c.entryId===id;});}
@@ -151,8 +219,9 @@
         h('button',{type:'button',class:'textbtn muted','data-act':'del','data-id':e.id,text:'Διαγραφή'}));
     }
     var cs=commentsFor(e.id), openC=!!openComments[e.id];
+    var gal=e.images.length?h('div',{class:'gallery'},e.images.map(function(p,i){var c=urlC[thumbPath(p)];return h('button',{type:'button',class:'ph','data-act':'photo','data-id':e.id,'data-i':String(i),'aria-label':'Άνοιγμα φωτογραφίας '+(i+1)},c?h('img',{src:c.url,alt:e.title+' ('+(i+1)+')',loading:'lazy'}):null);})):null;
     foot.append(h('button',{type:'button',class:'textbtn','data-act':'comments','data-id':e.id,text:(openC?'Κλείσιμο σχολίων':'Σχόλια')+(cs.length?' ('+cs.length+')':'')}));
-    return h('li',{class:'entry','data-entry':e.id},meta,h('h3',{text:e.title}),body,more,foot,openC?threadEl(e,cs):null);
+    return h('li',{class:'entry','data-entry':e.id},meta,h('h3',{text:e.title}),body,more,gal,foot,openC?threadEl(e,cs):null);
   }
   function threadEl(e,cs){
     var t=h('div',{class:'thread'});
@@ -237,10 +306,12 @@
     $('f-by').value=e?(e.by||''):myName();
     composerTags.length=0; if(e)e.mentions.forEach(function(id){composerTags.push(id);});
     var ps=$('f-people'); ps.textContent=''; ps.append(tagPicker(composerTags));
+    pending=[];gone=[];kept=e?e.images.slice():[];$('f-files').value='';drawPreviews();
+    if(e&&kept.length)signPaths(kept.map(thumbPath)).then(drawPreviews);
     $('composer').hidden=false; $('newBtn').textContent='Κλείσιμο φόρμας';
     $('composer').scrollIntoView({block:'nearest'}); $('f-title').focus();
   }
-  function closeForm(){editingId=null;$('composer').hidden=true;$('newBtn').textContent='Νέα καταχώρηση';}
+  function closeForm(){editingId=null;pending=[];kept=[];gone=[];$('composer').hidden=true;$('newBtn').textContent='Νέα καταχώρηση';}
   async function save(ev){
     ev.preventDefault();
     var title=$('f-title').value.trim();
@@ -251,10 +322,23 @@
       meeting_date:$('f-session').value||todayISO(),needs_check:$('f-check').checked,by_name:$('f-by').value.trim(),
       mentions:composerTags.slice(),updated_at:new Date().toISOString()};
     $('saveBtn').disabled=true;
-    var r;
+    var r, rid=editingId||((window.crypto&&crypto.randomUUID)?crypto.randomUUID():String(Date.now())+Math.random().toString(16).slice(2));
+    var lbl=editingId?'Αποθήκευση αλλαγών':'Αποθήκευση';
+    upl=[];
+    try{
+      if(pending.length)$('saveBtn').textContent='Ανεβάζω φωτογραφίες…';
+      var added=pending.length?await uploadPhotos(rid):[];
+      row.images=kept.concat(added);
+    }catch(err){
+      if(upl.length)sb.storage.from(BUCKET).remove(upl);
+      $('saveBtn').disabled=false; $('saveBtn').textContent=lbl;
+      fail(err);return;
+    }
     if(editingId)r=await sb.from('entries').update(row).eq('id',editingId);
-    else{row.id=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():String(Date.now())+Math.random().toString(16).slice(2);row.ord=Date.now();row.author_id=myId;r=await sb.from('entries').insert(row);}
-    $('saveBtn').disabled=false;
+    else{row.id=rid;row.ord=Date.now();row.author_id=myId;r=await sb.from('entries').insert(row);}
+    $('saveBtn').disabled=false; $('saveBtn').textContent=lbl;
+    if(!r.error&&gone.length)sb.storage.from(BUCKET).remove(gone.concat(gone.map(thumbPath)));
+    if(r.error&&upl.length)sb.storage.from(BUCKET).remove(upl);
     if(r.error){fail(r.error);return;}
     toast(editingId?'Οι αλλαγές αποθηκεύτηκαν.':'Η καταχώρηση προστέθηκε.');
     closeForm(); loadAll();
@@ -273,6 +357,12 @@
     $('newBtn').addEventListener('click',function(){if($('composer').hidden)openForm(null);else closeForm();});
     $('cancelBtn').addEventListener('click',closeForm);
     $('form').addEventListener('submit',save);
+    $('f-files').addEventListener('change',function(ev){
+      var fs=[].slice.call(ev.target.files), room=Math.max(0,12-kept.length-pending.length);
+      fs.filter(function(f){return /^image\//.test(f.type)||/\.(jpe?g|png|webp|gif|heic|heif)$/i.test(f.name);}).slice(0,room).forEach(function(f){pending.push(f);});
+      if(fs.length>room)toast('Το πολύ 12 φωτογραφίες ανά ποστ.');
+      ev.target.value=''; drawPreviews();
+    });
     $('f-type').addEventListener('change',function(ev){syncStatusSelect(ev.target.value,'open');});
     $('signOutBtn').addEventListener('click',function(){sb.auth.signOut();});
     $('noAccessOut').addEventListener('click',function(){sb.auth.signOut();});
@@ -295,10 +385,11 @@
       else if(act==='cdel'){confirmId='c:'+id;renderList();}
       else if(act==='cdelno'||act==='delno'){confirmId=null;renderList();}
       else if(act==='cdelyes'){confirmId=null;sb.from('comments').delete().eq('id',id).then(function(r){if(r.error)fail(r.error);else{toast('Το σχόλιο διαγράφηκε.');loadAll();}});}
+      else if(act==='photo'){openLB(id,Number(t.dataset.i)||0);}
       else if(act==='more'){expanded[id]=!expanded[id];renderList();}
       else if(act==='edit'&&e)openForm(e);
       else if(act==='del'){confirmId=id;renderList();}
-      else if(act==='delyes'){confirmId=null;sb.from('entries').delete().eq('id',id).then(function(r){if(r.error)fail(r.error);else{toast('Η καταχώρηση διαγράφηκε.');loadAll();}});}
+      else if(act==='delyes'){confirmId=null;sb.from('entries').delete().eq('id',id).then(function(r){if(r.error)fail(r.error);else{if(e&&e.images.length)sb.storage.from(BUCKET).remove(e.images.concat(e.images.map(thumbPath)));toast('Η καταχώρηση διαγράφηκε.');loadAll();}});}
     });
     document.addEventListener('change',function(ev){
       var t=ev.target;
