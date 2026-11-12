@@ -1,6 +1,6 @@
 (function(){
   'use strict';
-  var TYPES=[{k:'summary',l:'Σύνοψη'},{k:'decision',l:'Απόφαση'},{k:'question',l:'Ερώτημα'},{k:'scenario',l:'Σενάριο'},{k:'idea',l:'Ιδέα'},{k:'theme',l:'Θέμα'},{k:'task',l:'Ενέργεια'},{k:'reference',l:'Αναφορά'},{k:'photo',l:'Φωτογραφίες'},{k:'ai',l:"AI's opinion"}];
+  var TYPES=[{k:'summary',l:'Σύνοψη'},{k:'decision',l:'Απόφαση'},{k:'question',l:'Ερώτημα'},{k:'scenario',l:'Σενάριο'},{k:'idea',l:'Ιδέα'},{k:'theme',l:'Θέμα'},{k:'task',l:'Ενέργεια'},{k:'reference',l:'Αναφορά'},{k:'photo',l:'Φωτογραφίες'}];
   var AREAS=[{k:'plot',l:'Πλοκή & χαρακτήρες'},{k:'form',l:'Μορφή & σκηνοθεσία'},{k:'sound',l:'Μουσική & ήχος'},{k:'meaning',l:'Νόημα & θέματα'},{k:'production',l:'Παραγωγή & πρόγραμμα'},{k:'team',l:'Ομάδα'}];
   var STATUSES=[{k:'open',l:'Ανοιχτό'},{k:'leaning',l:'Κλίση'},{k:'decided',l:'Αποφασίστηκε'},{k:'parked',l:'Παρκαρισμένο'},{k:'done',l:'Ολοκληρώθηκε'}];
   var TYPE_L={},AREA_L={},STATUS_L={},TYPE_RANK={};
@@ -46,7 +46,7 @@
     var rs=await Promise.all([sb.from('entries').select('*').limit(5000),sb.from('comments').select('*').order('created_at').limit(5000),sb.from('profiles').select('id,name,email')]);
     var bad=rs.filter(function(r){return r.error;})[0];
     if(bad){var el=$('statusline');el.className='statusline warn';el.textContent='Δεν ήταν δυνατή η φόρτωση: '+bad.error.message;return;}
-    entries=rs[0].data.map(prep);
+    entries=rs[0].data.filter(function(r){return r.type!=='ai';}).map(prep);
     comments=rs[1].data.map(function(c){return {id:c.id,entryId:c.entry_id,text:c.body,mentions:c.mentions||[],authorId:c.author_id,createdAt:c.created_at};});
     profiles={}; rs[2].data.forEach(function(p){profiles[p.id]=p;});
     cText={}; comments.forEach(function(c){cText[c.entryId]=(cText[c.entryId]||'')+' '+norm(c.text);});
@@ -280,6 +280,7 @@
   function render(){
     renderHeader();renderRail();renderList();
     $('whoami').textContent='Συνδεδεμένος ως '+(myName()||myEmail);
+    if(window.CAL)window.CAL.render();
   }
 
   var toastT;
@@ -427,6 +428,7 @@
     }
     show('appView'); render();
     await loadAll();
+    if(window.CAL)window.CAL.start();
     sb.channel('archive').on('postgres_changes',{event:'*',schema:'public'},scheduleReload).subscribe();
   }
 
@@ -434,6 +436,7 @@
     var cfg=window.APP_CONFIG||{};
     if(!cfg.SUPABASE_URL||/PASTE_/.test(cfg.SUPABASE_URL)||!cfg.SUPABASE_ANON_KEY||/PASTE_/.test(cfg.SUPABASE_ANON_KEY)||!window.supabase){show('configView');return;}
     sb=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+    window.ARCH={sb:sb,h:h,tagPicker:tagPicker,chipEl:chipEl,nameOf:nameOf,toast:toast,fail:fail,fmtDate:fmtDate,me:function(){return myId;}};
     wire();
     sb.auth.onAuthStateChange(function(ev,session){setTimeout(function(){onSession(session);},0);});
   }
