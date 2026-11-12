@@ -166,6 +166,7 @@ h1{margin:0;font:400 clamp(36px,7vw,60px)/1.04 var(--font-display);letter-spacin
 .lbbar .cnt{margin-right:auto;font:400 13px var(--font-mono)}
 .lbbtn{min-width:44px;height:44px;border:1px solid #4a5160;border-radius:8px;background:#1b2028;color:#e6e9ee;font-size:24px;line-height:1}
 </style>
+<link rel="stylesheet" href="extra.css?v=1">
 </head>
 <body>
 <div class="wrap" lang="el">
@@ -203,6 +204,8 @@ h1{margin:0;font:400 clamp(36px,7vw,60px)/1.04 var(--font-display);letter-spacin
       <span id="renameBox" hidden><label class="sr" for="renameInput">Το όνομά σου</label><input id="renameInput" type="text" maxlength="60"> <button class="textbtn" id="renameSave" type="button">Αποθήκευση</button></span>
       <button class="textbtn" id="signOutBtn" type="button">Αποσύνδεση</button>
     </div>
+    <nav class="tabs" id="tabs" aria-label="Ενότητες"><button type="button" data-tab="archive" aria-current="page">Αρχείο</button><button type="button" data-tab="calendar">Ημερολόγιο</button></nav>
+    <div id="archiveView">
     <header>
       <p class="eyebrow">Θέατρο · Γιώργος · Ιωσήφ · Μαργαρίτα</p>
       <h1>Αρχείο Συζητήσεων</h1>
@@ -218,7 +221,7 @@ h1{margin:0;font:400 clamp(36px,7vw,60px)/1.04 var(--font-display);letter-spacin
         <div class="toolbar">
           <div class="search">
             <label class="sr" for="q">Αναζήτηση</label>
-            <input id="q" type="search" placeholder="Αναζήτηση σε τίτλους, κείμενα, σχόλια και ετικέτες" autocomplete="off">
+            <input id="q" type="search" placeholder="Αναζήτηση στο αρχείο" autocomplete="off">
           </div>
           <button class="btn" id="newBtn" type="button">Νέα καταχώρηση</button>
         </div>
@@ -248,11 +251,27 @@ h1{margin:0;font:400 clamp(36px,7vw,60px)/1.04 var(--font-display);letter-spacin
         <ul class="ledger" id="list"><li class="note">Φόρτωση καταχωρήσεων…</li></ul>
       </main>
     </div>
+    </div>
+    <section id="calView" hidden aria-label="Ημερολόγιο">
+      <div class="cal-head">
+        <h2 class="cal-title" id="calTitle"></h2>
+        <div class="cal-nav"><button type="button" id="calPrev" aria-label="Προηγούμενος μήνας">‹</button><button type="button" id="calToday">Σήμερα</button><button type="button" id="calNext" aria-label="Επόμενος μήνας">›</button></div>
+        <button type="button" class="btn" id="calNew">Νέο στο ημερολόγιο</button>
+      </div>
+      <p class="statusline" id="calErr"></p>
+      <div id="calForm"></div>
+      <div id="calGrid"></div>
+      <div class="cal-legend" id="calLegend"></div>
+      <div id="calDay"></div>
+      <div id="calGoals"></div>
+      <div id="calUp"></div>
+    </section>
   </div>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
-<script src="app.js"></script>
+<script src="app.js?v=3"></script>
+<script src="calendar.js?v=1"></script>
 </body>
 </html>
