@@ -88,3 +88,6 @@ button,a{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
   .cal-sec{margin-top:24px}
 }
 @media (min-width:861px){.cal-cell{cursor:pointer}}
+.entry{grid-template-columns:minmax(0,1fr)}
+.entry>*{min-width:0}
+.gallery{min-width:0}
